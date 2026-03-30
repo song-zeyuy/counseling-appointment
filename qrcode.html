@@ -157,9 +157,8 @@
 </div>
 
 <script>
-  // 获取当前页面的预约表单 URL
-  const currentUrl = location.href;
-  const appointmentUrl = currentUrl.replace('qrcode.html', 'index.html');
+  // 正式部署后的预约表单 URL
+  const appointmentUrl = 'https://counseling-appointment.vercel.app/index.html';
 
   document.getElementById('urlText').textContent = appointmentUrl;
 
