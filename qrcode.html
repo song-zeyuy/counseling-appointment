@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>预约二维码 - 心理咨询</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     :root {
       --primary: #6C8EBF;
@@ -51,12 +50,22 @@
       display: flex;
       justify-content: center;
       margin-bottom: 20px;
+      min-height: 280px;
+      align-items: center;
     }
 
-    #qrcode canvas, #qrcode img {
+    #qrcode img {
       border-radius: 12px;
       border: 6px solid var(--primary-light);
       box-shadow: 0 4px 20px rgba(108,142,191,0.2);
+      width: 260px;
+      height: 260px;
+    }
+
+    .loading {
+      color: var(--primary);
+      font-size: 14px;
+      padding: 40px;
     }
 
     .url-box {
@@ -132,11 +141,11 @@
   <h1>心理咨询预约</h1>
   <p class="subtitle">扫描下方二维码，快速预约咨询时间</p>
 
-  <div id="qrcode"></div>
+  <div id="qrcode"><div class="loading">正在生成二维码…</div></div>
 
-  <div class="url-box" id="urlBox">
+  <div class="url-box">
     <strong>预约链接：</strong>
-    <span id="urlText">正在生成…</span>
+    <span id="urlText">https://counseling-appointment.vercel.app</span>
   </div>
 
   <div class="btn-row">
@@ -145,9 +154,8 @@
   </div>
 
   <div class="local-note">
-    <strong>⚠️ 关于二维码的使用说明</strong>
-    当前生成的是本地文件路径的二维码，仅适用于同一设备。<br/>
-    若需要来访者用手机扫码填写，需将 <strong>index.html</strong> 部署到互联网（如 EdgeOne Pages、Vercel 等免费托管服务），然后用在线 URL 重新生成二维码。
+    <strong>📌 使用说明</strong>
+    下载二维码后，可打印贴在咨询室门口，或通过微信发送给来访者。扫码即可直接填写预约表单。
   </div>
 
   <p class="tip">
@@ -157,66 +165,67 @@
 </div>
 
 <script>
-  // 正式部署后的预约表单 URL
-  const appointmentUrl = 'https://counseling-appointment.vercel.app/index.html';
+  const appointmentUrl = encodeURIComponent('https://counseling-appointment.vercel.app/index.html');
+  const qrUrl = 'https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=' + appointmentUrl + '&choe=UTF-8&chld=L|1';
 
-  document.getElementById('urlText').textContent = appointmentUrl;
+  document.getElementById('urlText').textContent = 'https://counseling-appointment.vercel.app/index.html';
 
-  // 生成二维码
-  QRCode.toCanvas(
-    document.createElement('canvas'),
-    appointmentUrl,
-    { width: 240, margin: 2, color: { dark: '#4A6FA5', light: '#FFFFFF' } },
-    function(err, canvas) {
-      if (err) {
-        console.error(err);
-        document.getElementById('qrcode').innerHTML = '<p style="color:red">二维码生成失败，请检查网络连接</p>';
-        return;
-      }
-      document.getElementById('qrcode').appendChild(canvas);
-    }
-  );
+  var img = new Image();
+  img.crossOrigin = 'Anonymous';
+  img.onload = function() {
+    document.getElementById('qrcode').innerHTML = '';
+    img.style.cssText = 'border-radius:12px;border:6px solid #E8F0FB;box-shadow:0 4px 20px rgba(108,142,191,0.2);width:260px;height:260px';
+    document.getElementById('qrcode').appendChild(img);
+  };
+  img.onerror = function() {
+    document.getElementById('qrcode').innerHTML = '<p style="color:#C96B6B;font-size:13px;padding:20px">二维码加载失败，请检查网络后刷新重试</p>';
+  };
+  img.src = qrUrl;
 
   function downloadQR() {
-    const canvas = document.querySelector('#qrcode canvas');
-    if (!canvas) { alert('二维码尚未生成，请稍候'); return; }
-
-    // 创建带白边的大图
-    const size = 320;
-    const padding = 20;
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = size + padding * 2;
-    offCanvas.height = size + padding * 2 + 60;
-    const ctx = offCanvas.getContext('2d');
+    var canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 440;
+    var ctx = canvas.getContext('2d');
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+    ctx.fillRect(0, 0, 400, 440);
 
-    ctx.drawImage(canvas, padding, padding, size, size);
+    var qrImg = new Image();
+    qrImg.crossOrigin = 'Anonymous';
+    qrImg.onload = function() {
+      ctx.drawImage(qrImg, 40, 20, 320, 320);
+      ctx.fillStyle = '#4A6FA5';
+      ctx.font = 'bold 18px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('扫码预约心理咨询', 200, 385);
+      ctx.font = '13px Arial, sans-serif';
+      ctx.fillStyle = '#718096';
+      ctx.fillText('心理咨询预约系统', 200, 410);
 
-    ctx.fillStyle = '#4A6FA5';
-    ctx.font = 'bold 16px PingFang SC, Microsoft YaHei, Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('扫码预约心理咨询', offCanvas.width / 2, size + padding * 2 + 30);
-
-    const link = document.createElement('a');
-    link.download = '心理咨询预约二维码.png';
-    link.href = offCanvas.toDataURL('image/png');
-    link.click();
+      var link = document.createElement('a');
+      link.download = '心理咨询预约二维码.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    qrImg.onerror = function() {
+      alert('图片尚未加载完成，请稍候再试');
+    };
+    qrImg.src = qrUrl;
   }
 
   function copyUrl() {
-    const url = document.getElementById('urlText').textContent;
+    var url = document.getElementById('urlText').textContent;
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(() => alert('链接已复制到剪贴板'));
+      navigator.clipboard.writeText(url).then(function() { alert('链接已复制到剪贴板！'); });
     } else {
-      const el = document.createElement('textarea');
+      var el = document.createElement('textarea');
       el.value = url;
       document.body.appendChild(el);
       el.select();
       document.execCommand('copy');
       document.body.removeChild(el);
-      alert('链接已复制');
+      alert('链接已复制！');
     }
   }
 </script>
